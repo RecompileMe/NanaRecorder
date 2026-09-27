@@ -73,7 +73,7 @@ int VideoCapture::initCapture() {
     av_dict_set(&options, "pixel_format", "yuv420p", 0);
 #endif
 
-    if ((ret = avformat_open_input(&m_vFmtCtx, VIDEO_DEVICE_NAME, ifmt, &options)) < 0) {
+    if ((ret = avformat_open_input(&m_vFmtCtx, VIDEO_DEVICE_NAME, const_cast<AVInputFormat*>(ifmt), &options)) < 0) {
         qCritical() << "video avformat_open_input failed:" << FFmpegHelper::err2Str(ret);
         return -1;
     }

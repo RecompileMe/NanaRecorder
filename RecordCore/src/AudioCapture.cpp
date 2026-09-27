@@ -95,7 +95,7 @@ int AudioCapture::initCapture(AudioCaptureDevice dev) {
         qCritical() << "Can not find audio device";
         return -1;
     }
-    if ((ret = avformat_open_input(&m_aFmtCtx, audioDeviceName.c_str(), ifmt, &options)) != 0) {
+    if ((ret = avformat_open_input(&m_aFmtCtx, audioDeviceName.c_str(), const_cast<AVInputFormat*>(ifmt), &options)) != 0) {
         qCritical() << "Auido avformat_open_input failed:" << FFmpegHelper::err2Str(ret);
         return -1;
     }
