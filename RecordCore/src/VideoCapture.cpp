@@ -10,6 +10,7 @@
 
 #include <string>
 #include <mutex>
+#include <cstdlib>
 
 #ifdef WIN32
 //#define USE_DSHOW
@@ -24,7 +25,7 @@
 
 #elif __linux__
 #define VIDEO_DEVICE_FORMAT "x11grab"
-#define VIDEO_DEVICE_NAME ":1"
+// VIDEO_DEVICE_NAME is resolved at runtime on Linux, see getVideoDeviceName()
 #else
 #error Unsupported platform
 #endif
@@ -33,6 +34,19 @@ using namespace std;
 using namespace std::chrono;
 
 namespace onlyet {
+
+const char* getVideoDeviceName() {
+#ifdef WIN32
+#ifdef USE_DSHOW
+    return "video=screen-capture-recorder";
+#else
+    return "desktop";
+#endif
+#else
+    const char* display = std::getenv("DISPLAY");
+    return (display && *display) ? display : ":0.0";
+#endif
+}
 
 int VideoCapture::startCapture() {
     if (m_isRunning) return -1;
@@ -65,7 +79,7 @@ int VideoCapture::initCapture() {
     int                  ret     = -1;
     AVDictionary*        options = nullptr;
     const AVCodec*       decoder = nullptr;
-    const AVInputFormat* ifmt    = av_find_input_format(VIDEO_DEVICE_FORMAT);
+    AVInputFormat* ifmt    = av_find_input_format(VIDEO_DEVICE_FORMAT);
 
     av_dict_set(&options, "framerate", QString::number(fps).toStdString().c_str(), 0);
     av_dict_set(&options, "video_size", QString("%1x%2").arg(inWidth).arg(inHeight).toStdString().c_str(), 0);
@@ -73,9 +87,10 @@ int VideoCapture::initCapture() {
     av_dict_set(&options, "pixel_format", "yuv420p", 0);
 #endif
 
-    if ((ret = avformat_open_input(&m_vFmtCtx, VIDEO_DEVICE_NAME, const_cast<AVInputFormat*>(ifmt), &options)) < 0) {
-        qCritical() << "video avformat_open_input failed:" << FFmpegHelper::err2Str(ret);
-        return -1;
+    const char* devName = getVideoDeviceName();
+    if ((ret = avformat_open_input(&m_vFmtCtx, devName, ifmt, &options)) < 0) {
+      qCritical() << "video avformat_open_input failed:" << FFmpegHelper::err2Str(ret) << "device:" << devName;
+      return -1;
     }
     if (avformat_find_stream_info(m_vFmtCtx, nullptr) < 0) {
         qCritical() << "Couldn't find stream information";
