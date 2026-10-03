@@ -89,7 +89,7 @@ int VideoCapture::initCapture() {
                 qCritical() << "can not find decoder";
                 return -1;
             }
-            //从视频流中拷贝参数到codecCtx
+            // Copy parameters from the video stream to the codec context
             m_vDecodeCtx = avcodec_alloc_context3(decoder);
             if ((ret = avcodec_parameters_to_context(m_vDecodeCtx, stream->codecpar)) < 0) {
                 qCritical() << "Video avcodec_parameters_to_context failed,error code: " << ret;
